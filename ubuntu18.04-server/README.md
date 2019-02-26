@@ -8,10 +8,10 @@ This repository has already created the basic directory structure required for a
 
 ## Create ansible role directory structure:
 
-In this example we'll be creating a centos-7-server deployment.  Note: This repository holds several os deployment examples.
+In this example we'll be creating a ubuntu18.04-server deployment.  Note: This repository holds several os deployment examples.
 ```shell
-$ mkdir -p ~/Desktop/Documentation/Ansible/QuickStart/centos-7-server
-$ cd ~/Desktop/Documentation/Ansible/QuickStart/centos-7-server
+$ mkdir -p ~/Desktop/Documentation/Ansible/QuickStart/ubuntu18.04-server
+$ cd ~/Desktop/Documentation/Ansible/QuickStart/ubuntu18.04-server
 ```
 
 ```shell
@@ -82,9 +82,14 @@ Host test
   # Optional following line (VirtualBox PortForwarding)
   # Port 1919 
   IdentityFile ~/.ssh/id_rsa
+Host ubuntu1804
+  Hostname 10.100.194.22
+  IdentityFile ~/.ssh/id_rsa
 ```
 
 ## Make sure you already have a ssh private and public keys available
+
+You should see id_rsa and id_rsa.pub
 ```shell
 $ ls -la ~/.ssh
 # Optionally, generate with:
@@ -93,7 +98,7 @@ $ ssh-keygen
 
 # Use Vagrant to manage host
 ```shell
-$ vi ~/Desktop/Documentation/Ansible/QuickStart/centos-7-server/Vagrantfile
+$ vi ~/Desktop/Documentation/Ansible/QuickStart/ubuntu18.04-server/Vagrantfile
 ```
 
 # CentOS Host
@@ -110,19 +115,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Ubuntu 16.04 LTS (Xenial Xerus)
   # config.vm.box = "ubuntu/xenial64"
   # Ubuntu 18.04 LTS (Bionic Beaver) Server
-  # config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/bionic64"
   # Ubuntu 18.04 LTS (Bionic Beaver) Desktop
   #config.vm.box = "peru/ubuntu-18.04-desktop-amd64"
   #config.vm.box_version = "20181210.01"
   # Centos 7
-  config.vm.box = "centos/7"
+  # config.vm.box = "centos/7"
 
-  config.vm.hostname = "centos7sp19"
-  #config.vm.hostname = "ubuntusp19"
+  #config.vm.hostname = "centos7sp19"
+  config.vm.hostname = "ubuntusp19"
 
   # Configure vm name (later used for ansible group)
-  config.vm.define "centos7sp19"
-  #config.vm.define = "ubuntusp19"
+  #config.vm.define "centos7sp19"
+  config.vm.define = "ubuntusp19"
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = 2048
@@ -132,7 +137,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # manual ip
   #config.vm.network "public_network", :bridge => "enxa0cec8039e98", ip: "10.100.194.21", :netmask => "255.255.248.0", auto_config: false
   # CentOS 7 manual ip address (interface enxa0cec8039e98)
-  config.vm.network "public_network", ip: "10.100.194.21", bridge: "enxa0cec8039e98", bootproto: "static", gateway: "10.100.199.254"
+  config.vm.network "public_network", ip: "10.100.194.22", bridge: "enxa0cec8039e98", bootproto: "static", gateway: "10.100.199.254"
 
   #config.vm.provision "shell",
     #inline: "sudo apt-get update && sudo apt install -y python"
@@ -151,8 +156,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     ansible.compatibility_mode = "2.0"
     ansible.playbook = "playbook.yml"
 
+    #ansible.groups = {
+    #  "test" => ["centos7sp19"]
+    #}
     ansible.groups = {
-      "test" => ["centos7sp19"]
+      "test" => ["ubuntusp19"]
     }
 
 #    ansible.extra_vars = {
@@ -164,7 +172,33 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 end
 ```
 
-Optionally, recreate VM as required
+# On Dev Workstation
+
+## Create the playbook.yml
+
+```shell
+$ vi ~/Desktop/Documentation/Ansible/QuickStart/ubuntu18.04-server/playbook.yml
+```
+
+```bash
+---
+- hosts: test
+#- hosts: all
+  become: true
+  roles:
+    - common
+```
+
+```shell
+$ vi ~/Desktop/Documentation/Ansible/QuickStart/ubuntu18.04-server/staging
+```
+
+```bash
+[testgroup]
+test ansible_user=vagrant
+```
+
+## Optionally, recreate VM as required
 ```shell
 $ cd ~/Desktop/Documentation/Ansible/QuickStart/centos-7-server
 $ vagrant destroy -f; vagrant up
@@ -192,31 +226,7 @@ $ cat /etc/sudoers.d/vagrant
 sudo apt-get -y install python-pip
 ````
 
-# On Dev Workstation
 
-## Create the playbook.yml
-
-```shell
-$ vi ~/Desktop/Documentation/Ansible/QuickStart/centos-7-server/playbook.yml
-```
-
-```bash
----
-- hosts: test
-#- hosts: all
-  become: true
-  roles:
-    - common
-```
-
-```shell
-$ vi ~/Desktop/Documentation/Ansible/QuickStart/centos-7-server/staging
-```
-
-```bash
-[testgroup]
-test ansible_user=vagrant
-```
 
 ## Manually run changes from the playbook after initial VM installed
 ```shell
